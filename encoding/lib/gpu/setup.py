@@ -6,8 +6,7 @@ setup(
     ext_modules=[
         CUDAExtension('enclib_gpu', [
             'operator.cpp',
-            'encoding_kernel.cu',
-            'syncbn_kernel.cu'
+            'encoding_kernel.cu'
             ]),
     ],
     cmdclass={
