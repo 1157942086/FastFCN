@@ -84,7 +84,12 @@ class Options():
                             help='skip validation during training')
         parser.add_argument('--save-folder', type=str, default='results',
                             help = 'path to save images')
-
+        # distributed training
+        parser.add_argument('--world-size', default=1, type=int, help='number of nodes for distributed training')
+        parser.add_argument('--rank', default=0, type=int, help='node rank for distributed training')
+        parser.add_argument('--dist-url', default='tcp://127.0.0.1:1735', type=str,
+                            help='url used to set up distributed training')
+        parser.add_argument('--dist-backend', default='nccl', type=str, help='distributed backend')
         # the parser
         self.parser = parser
 
