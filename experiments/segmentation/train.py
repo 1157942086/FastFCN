@@ -179,9 +179,10 @@ class Trainer():
                 'pixAcc: %.3f, mIoU: %.3f' % (pixAcc, mIoU))
 
         new_pred = (pixAcc + mIoU)/2
-        if new_pred > self.best_pred and self.args.rank == 0:
+        if new_pred > self.best_pred:
             is_best = True
             self.best_pred = new_pred
+        if self.args.rank == 0:
             utils.save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': self.model.module.state_dict(),
@@ -192,10 +193,7 @@ class Trainer():
 
 def main_worker(gpu, ngpus_per_node, args):
     if gpu != 0:
-        directory = "runs/{}/{}/{}".format(args.dataset, args.model, args.checkname)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        sys.stdout = open('{}/gpu_{}.log'.format(directory, gpu), 'w')
+        sys.stdout = open(os.devnull, 'w')
     trainer = Trainer(gpu, ngpus_per_node, args)
     print('Starting Epoch:', trainer.args.start_epoch)
     print('Total Epoches:', trainer.args.epochs)
