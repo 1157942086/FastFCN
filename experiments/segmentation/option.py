@@ -103,7 +103,7 @@ class Options():
                 'citys': 240,
                 'pascal_voc': 50,
                 'pascal_aug': 50,
-                'pcontext': 80,
+                'pcontext': 120,
                 'ade20k': 120,
             }
             args.epochs = epoches[args.dataset.lower()]
