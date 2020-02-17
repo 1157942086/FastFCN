@@ -61,24 +61,26 @@ def aggregate(A, X, C):
     """
     return _aggregate.apply(A, X, C)
 
-class _scaled_l2(Function):
+class ScaledL2(Function):
     @staticmethod
     def forward(ctx, X, C, S):
-        if X.is_cuda:
-            SL = lib.gpu.scaled_l2_forward(X, C, S)
-        else:
-            SL = lib.cpu.scaled_l2_forward(X, C, S)
+        SL = S.view(1, 1, C.size(0)) * (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1))
+                                        - C.unsqueeze(0).unsqueeze(0)).pow_(2).sum(3)
         ctx.save_for_backward(X, C, S, SL)
         return SL
 
     @staticmethod
-    def backward(ctx, gradSL):
+    def backward(ctx, GSL):
         X, C, S, SL = ctx.saved_variables
-        if X.is_cuda:
-            gradX, gradC, gradS = lib.gpu.scaled_l2_backward(gradSL, X, C, S, SL)
-        else:
-            gradX, gradC, gradS = lib.cpu.scaled_l2_backward(gradSL, X, C, S, SL)
-        return gradX, gradC, gradS
+
+        tmp = (2 * GSL * S.view(1, 1, C.size(0))).unsqueeze(3) * \
+              (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1)) - C.unsqueeze(0).unsqueeze(0))
+
+        GX = tmp.sum(2)
+        GC = - tmp.sum(0).sum(0)
+        GS = (GSL * (SL / S.view(1, 1, C.size(0)))).sum(0).sum(0)
+
+        return GX, GC, GS
 
 def scaled_l2(X, C, S):
     r""" scaled_l2 distance
@@ -93,4 +95,4 @@ def scaled_l2(X, C, S):
           :math:`K` is number is codewords, :math:`D` is feature dimensions.)
         - Output: :math:`E\in\mathcal{R}^{B\times N\times K}`
     """
-    return _scaled_l2.apply(X, C, S)
+    return ScaledL2.apply(X, C, S)
