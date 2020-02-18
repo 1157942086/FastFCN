@@ -15,6 +15,13 @@ A **Faster**, **Stronger** and **Lighter** framework for semantic segmentation, 
 ```
 Contact: Hui-Kai Wu (huikaiwu@icloud.com)
 
+## Update
+**2020-02-18: `FastFCN` can now run on every `OS` with `PyTorch>=1.1.0` and `Python==3.*.*`**
+- Replace `SyncBatchNorm` with `torch.nn.SyncBatchNorm`.
+- Employ `torch.nn.DistributedDataParallel`.
+- Replace all `C/C++` extensions with `torch.autograd.Function` extensions (Pure Python).
+- Note: Due to the introduction of `torch.nn.DistributedDataParallel`, the performance (mIoU) is lower than `v1.0.0` under the same hyper-parameter configurations [PContext-ResNet50-Encoding: 50.65% v.s. 51.05%]. To improve the performance, we add more training epochs as a temporal solution. Pull requests are welcome to address the issue. 
+
 ## Overview
 ### Framework
 ![](images/Framework.png)
