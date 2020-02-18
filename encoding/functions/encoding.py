@@ -64,8 +64,8 @@ def aggregate(A, X, C):
 class ScaledL2(Function):
     @staticmethod
     def forward(ctx, X, C, S):
-        SL = S.view(1, 1, C.size(0)) * (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1))
-                                        - C.unsqueeze(0).unsqueeze(0)).pow_(2).sum(3)
+        SL = (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1)) -
+              C.unsqueeze(0).unsqueeze(0)).pow_(2).sum(3).mul_(S.view(1, 1, C.size(0)))
         ctx.save_for_backward(X, C, S, SL)
         return SL
 
@@ -73,12 +73,13 @@ class ScaledL2(Function):
     def backward(ctx, GSL):
         X, C, S, SL = ctx.saved_variables
 
-        tmp = (2 * GSL * S.view(1, 1, C.size(0))).unsqueeze(3) * \
-              (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1)) - C.unsqueeze(0).unsqueeze(0))
+        tmp = (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1)) - C.unsqueeze(0).unsqueeze(0)).mul_(
+            (2 * GSL).mul_(S.view(1, 1, C.size(0))).unsqueeze(3)
+        )
 
         GX = tmp.sum(2)
-        GC = - tmp.sum(0).sum(0)
-        GS = (GSL * (SL / S.view(1, 1, C.size(0)))).sum(0).sum(0)
+        GC = tmp.sum((0, 1)).mul_(-1)
+        GS = SL.div(S.view(1, 1, C.size(0))).mul_(GSL).sum((0, 1))
 
         return GX, GC, GS
 
@@ -96,3 +97,11 @@ def scaled_l2(X, C, S):
         - Output: :math:`E\in\mathcal{R}^{B\times N\times K}`
     """
     return ScaledL2.apply(X, C, S)
+
+if __name__ == '__main__':
+    B, N, D, K = 3, 4, 5, 6
+    X = torch.randn((B, N, D), dtype=torch.double,requires_grad=True).cuda()
+    C = torch.randn((K, D), dtype=torch.double,requires_grad=True).cuda()
+    S = torch.randn((K,), dtype=torch.double,requires_grad=True).cuda()
+
+    print(torch.autograd.gradcheck(scaled_l2, (X, C, S)))
