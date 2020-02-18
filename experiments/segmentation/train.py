@@ -22,7 +22,7 @@ from encoding.nn import SegmentationLosses
 from encoding.datasets import get_segmentation_dataset
 from encoding.models import get_segmentation_model
 
-from option import Options
+from .option import Options
 
 torch_ver = torch.__version__[:3]
 if torch_ver == '0.3':

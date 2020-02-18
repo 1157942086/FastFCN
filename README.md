@@ -22,13 +22,11 @@ Contact: Hui-Kai Wu (huikaiwu@icloud.com)
 ![](images/JPU.png)
 
 ## Install
-1. [PyTorch 1.0](https://pytorch.org/get-started/locally) (Note: The code is test in the environment with `python=3.5, cuda=9.0`)
-2. Install **FastFCN**
+1. [PyTorch >= 1.1.0](https://pytorch.org/get-started/locally) (Note: The code is test in the environment with `python=3.6, cuda=9.0`)
+2. Download **FastFCN**
    ```
    git clone https://github.com/wuhuikai/FastFCN.git
    cd FastFCN
-   PATH=.:$PATH
-   python setup.py install
    ```
 3. Install Requirements
    ```
@@ -42,8 +40,7 @@ Contact: Hui-Kai Wu (huikaiwu@icloud.com)
 ## Train and Test
 ### PContext
 ```
-python scripts/prepare_pcontext.py
-cd experiments/segmentation
+python -m scripts.prepare_pcontext
 ```
 | Method | Backbone | mIoU | FPS | Model | Scripts |
 |:----|:----|:---:|:---:|:---:|:---:|
@@ -58,8 +55,7 @@ cd experiments/segmentation
 
 ### ADE20K
 ```
-python scripts/prepare_ade20k.py
-cd experiments/segmentation
+python -m scripts.prepare_ade20k
 ```
 #### Training Set
 | Method | Backbone | mIoU (MS) | Model | Scripts |

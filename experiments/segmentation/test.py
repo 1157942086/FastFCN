@@ -18,7 +18,7 @@ from torch.utils import data
 from encoding.datasets import get_segmentation_dataset, test_batchify_fn
 from encoding.models import get_model, get_segmentation_model, MultiEvalModule
 
-from option import Options
+from .option import Options
 
 
 def test(args):

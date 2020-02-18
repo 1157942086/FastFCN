@@ -11,6 +11,7 @@ version.py
 runs/
 data/
 build/
+results/
 encoding/_ext/
 fast_fcn.egg-info/
 
