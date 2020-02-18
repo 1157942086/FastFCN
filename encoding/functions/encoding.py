@@ -12,28 +12,25 @@ import torch
 
 from torch.autograd import Function, Variable
 
-from .. import lib
-
 __all__ = ['aggregate', 'scaled_l2']
 
-class _aggregate(Function):
+class Aggregate(Function):
     @staticmethod
     def forward(ctx, A, X, C):
-        # A \in(BxNxK) R \in(BxNxKxD) => E \in(BxNxD)
         ctx.save_for_backward(A, X, C)
-        if A.is_cuda:
-            E = lib.gpu.aggregate_forward(A, X, C)
-        else:
-            E = lib.cpu.aggregate_forward(A, X, C)
-        return E
+
+        return (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1)) -
+             C.unsqueeze(0).unsqueeze(0)).mul_(A.unsqueeze(3)).sum(1)
 
     @staticmethod
-    def backward(ctx, gradE):
+    def backward(ctx, GE):
         A, X, C = ctx.saved_variables
-        if A.is_cuda:
-            gradA, gradX, gradC = lib.gpu.aggregate_backward(gradE, A, X, C)
-        else:
-            gradA, gradX, gradC = lib.cpu.aggregate_backward(gradE, A, X, C)
+
+        gradA = (X.unsqueeze(2).expand(X.size(0), X.size(1), C.size(0), C.size(1)) -
+                 C.unsqueeze(0).unsqueeze(0)).mul_(GE.unsqueeze(1)).sum(3)
+        gradX = torch.bmm(A, GE)
+        gradC = A.sum(1).unsqueeze(2).mul(GE).mul_(-1).sum(0)
+
         return gradA, gradX, gradC
 
 def aggregate(A, X, C):
@@ -59,7 +56,7 @@ def aggregate(A, X, C):
         >>> func = encoding.aggregate()
         >>> E = func(A, X, C)
     """
-    return _aggregate.apply(A, X, C)
+    return Aggregate.apply(A, X, C)
 
 class ScaledL2(Function):
     @staticmethod
@@ -103,5 +100,9 @@ if __name__ == '__main__':
     X = torch.randn((B, N, D), dtype=torch.double,requires_grad=True).cuda()
     C = torch.randn((K, D), dtype=torch.double,requires_grad=True).cuda()
     S = torch.randn((K,), dtype=torch.double,requires_grad=True).cuda()
+    assert torch.autograd.gradcheck(scaled_l2, (X, C, S))
 
-    print(torch.autograd.gradcheck(scaled_l2, (X, C, S)))
+    A = torch.randn((B, N, K), dtype=torch.double, requires_grad=True).cuda()
+    X = torch.randn((B, N, D), dtype=torch.double, requires_grad=True).cuda()
+    C = torch.randn((K, D), dtype=torch.double, requires_grad=True).cuda()
+    assert torch.autograd.gradcheck(aggregate, (A, X, C))
